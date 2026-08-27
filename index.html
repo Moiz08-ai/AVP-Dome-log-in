@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>AVP Site Sign-In</title>
+<style>
+  :root{
+    --black:#0A0800; --dark:#1A3A2A; --mid:#2D5A3D; --light:#E8F5EC;
+    --gold:#BA7517; --goldlt:#F5E8C8; --white:#FFFFFF; --cream:#FAFAF8;
+    --grey:#888780; --lgrey:#F1EFE8; --mgrey:#5F5E5A;
+    --red:#C43030; --redlt:#FDECEA; --green:#3B8351; --greenlt:#EAF5EC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Calibri,sans-serif;
+    background:var(--cream); color:var(--black); margin:0; padding:0;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+  header{background:linear-gradient(135deg,var(--dark) 0%,var(--mid) 100%);color:var(--white);
+         padding:22px 20px 20px;text-align:center;}
+  header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:0.01em;}
+  header p{margin:4px 0 0;color:var(--goldlt);font-size:12.5px;}
+  main{flex:1;padding:18px 16px 40px;}
+  .card{background:var(--white);border:1px solid var(--lgrey);border-radius:14px;padding:16px;margin-bottom:16px;}
+  .label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--mgrey);font-weight:700;margin:0 0 10px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .pill{
+    border:1.5px solid var(--lgrey); background:var(--cream); color:var(--black);
+    border-radius:10px; padding:14px 10px; font-size:14px; font-weight:600;
+    cursor:pointer; text-align:center; transition:all .12s;
+  }
+  .pill:active{transform:scale(0.97);}
+  .pill.selected{background:var(--dark); color:var(--white); border-color:var(--dark);}
+  input[type=text]{
+    width:100%; border:1.5px solid var(--lgrey); border-radius:10px; padding:13px 12px;
+    font-size:15px; font-family:inherit; background:var(--cream); color:var(--black);
+  }
+  input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
+  textarea{
+    width:100%; border:1.5px solid var(--lgrey); border-radius:10px; padding:13px 12px;
+    font-size:15px; font-family:inherit; background:var(--cream); color:var(--black);
+    min-height:70px; resize:vertical;
+  }
+  textarea:focus{outline:2px solid var(--gold); outline-offset:1px;}
+  .req{color:var(--red); font-weight:700; margin-left:2px;}
+  .big-btn{
+    width:100%; border:none; border-radius:12px; padding:18px; font-size:17px;
+    font-weight:700; cursor:pointer; margin-top:6px; transition:opacity .12s, transform .08s;
+  }
+  .big-btn:active{transform:scale(0.98);}
+  .big-btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .big-btn.in{background:var(--green); color:var(--white);}
+  .big-btn.out{background:var(--red); color:var(--white);}
+  .status-banner{
+    display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:12px;
+    margin-bottom:14px; font-size:13.5px;
+  }
+  .status-banner.on{background:var(--greenlt); color:#1F5C33; border:1px solid #BFE4CC;}
+  .status-banner.off{background:var(--lgrey); color:var(--mgrey); border:1px solid #E5E1D6;}
+  .status-banner.warn{background:var(--redlt); color:#8C2A2A; border:1px solid #F3C9C4;}
+  .status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .status-dot.on{background:var(--green);}
+  .status-dot.off{background:var(--grey);}
+  .name-hint{font-size:12px;color:var(--mgrey);margin-top:2px;}
+  .board-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--lgrey); font-size:13.5px;
+  }
+  .board-item:last-child{border-bottom:none;}
+  .board-name{font-weight:600;}
+  .board-site{color:var(--mgrey); font-size:12px;}
+  .board-time{color:var(--gold); font-size:12px; font-weight:700; white-space:nowrap;}
+  .empty{color:var(--mgrey); font-size:13px; padding:8px 0; text-align:center;}
+  .log-entry{padding:9px 0; border-bottom:1px solid var(--lgrey); font-size:12.5px;}
+  .log-entry:last-child{border-bottom:none;}
+  .log-top{display:flex; justify-content:space-between; align-items:center;}
+  .log-name{font-weight:600;}
+  .log-action{font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:20px; letter-spacing:.03em;}
+  .log-action.in{background:var(--greenlt); color:#1F5C33;}
+  .log-action.out{background:var(--redlt); color:#8C2A2A;}
+  .log-meta{color:var(--mgrey); font-size:11.5px; margin-top:2px;}
+  .log-note{color:var(--mgrey); font-size:12px; margin-top:3px; font-style:italic;}
+  .back-link{display:inline-block; margin-bottom:12px; color:var(--mgrey); font-size:13px;
+             text-decoration:none; cursor:pointer;}
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--black); color:var(--white); padding:11px 18px; border-radius:30px;
+    font-size:13.5px; z-index:100; opacity:0; transition:opacity .25s; pointer-events:none;
+    max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1;}
+  footer{text-align:center; padding:14px; color:var(--grey); font-size:10.5px;}
+  .site-other-wrap{margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌿 AVP Site Sign-In</h1>
+    <p>Dome &amp; Factory Attendance</p>
+  </header>
+  <main id="main"></main>
+  <footer>AVP-10-08 &middot; Site Sign-In &middot; Australian Vanilla Plantations</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====================================================================
+   SETUP: paste your Google Apps Script Web App URL below (ends /exec).
+   See Code.gs for the backend that goes with this file.
+   ==================================================================== */
+const API_URL = "https://script.google.com/macros/s/AKfycbxNrvJoa_D8F-rZ33vESvP_rLgrgWgIyjSHTNMq-sbyG7k2cRyy842Pzu0B63a4pGjiiw/exec";
+
+const NAMES = ["David Soo","Vivek","Namal Jayasuriya","Craig Rushby","Moiz","Joshua Soo","Julie Sosso","Craig Davis"];
+const SITES = ["Dome#01 Richmond","Factory Richmond","Dome#03 Richmond"];
+
+let screen = 'name';       // 'name' | 'action'
+let selectedName = null;
+let currentStatus = null;  // {site, checkinTime, note} or null
+let selectedSite = null;
+let otherSiteMode = false;
+let entriesCache = [];
+
+function apiConfigured(){
+  return API_URL && API_URL.indexOf('PASTE_YOUR') === -1;
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+function fmtTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+function fmtDuration(iso){
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime())/60000));
+  if (mins < 60) return mins + 'm';
+  const h = Math.floor(mins/60), m = mins%60;
+  return h + 'h ' + m + 'm';
+}
+
+/* ---------- backend calls ---------- */
+
+async function fetchEntries(){
+  if (!apiConfigured()) return entriesCache;
+  try{
+    const res = await fetch(API_URL + '?t=' + Date.now());
+    const data = await res.json();
+    entriesCache = (data.entries || []).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }catch(e){
+    // network hiccup — keep showing last known data
+  }
+  return entriesCache;
+}
+
+function deriveStatuses(entries){
+  const latestByName = {};
+  entries.forEach(e => {
+    if (!latestByName[e.name] || new Date(e.timestamp) > new Date(latestByName[e.name].timestamp)){
+      latestByName[e.name] = e;
+    }
+  });
+  return Object.values(latestByName)
+    .filter(e => e.action === 'in')
+    .map(e => ({ name: e.name, site: e.site, checkinTime: e.timestamp, note: e.note }))
+    .sort((a,b) => new Date(a.checkinTime) - new Date(b.checkinTime));
+}
+
+async function postEntry(payload){
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'}, // avoids CORS preflight on Apps Script
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+/* ---------- rendering ---------- */
+
+function render(){
+  const main = document.getElementById('main');
+  if (screen === 'name'){
+    main.innerHTML = renderNameScreen();
+    attachNameHandlers();
+  } else {
+    main.innerHTML = renderActionScreen();
+    attachActionHandlers();
+  }
+  renderBoards();
+}
+
+function configWarningHtml(){
+  if (apiConfigured()) return '';
+  return `
+    <div class="status-banner warn">
+      <div>&#9888; API_URL isn't set yet. Open this file and paste your Apps Script Web App URL into the API_URL constant near the top of the &lt;script&gt; section.</div>
+    </div>
+  `;
+}
+
+function renderNameScreen(){
+  return `
+    ${configWarningHtml()}
+    <div class="card">
+      <div class="label">Who are you?</div>
+      <div class="grid" id="name-grid"></div>
+      <div class="site-other-wrap">
+        <input type="text" id="other-name" placeholder="Type your name if not listed">
+      </div>
+    </div>
+    <div class="card" id="boards-card">
+      <div class="label">Currently on site</div>
+      <div id="on-site-board"></div>
+    </div>
+    <div class="card">
+      <div class="label">Today's activity</div>
+      <div id="activity-log"></div>
+    </div>
+  `;
+}
+
+function attachNameHandlers(){
+  const grid = document.getElementById('name-grid');
+  grid.innerHTML = NAMES.map(n => `<div class="pill" data-name="${escapeHtml(n)}">${escapeHtml(n)}</div>`).join('');
+  grid.querySelectorAll('.pill').forEach(el => {
+    el.onclick = () => pickName(el.getAttribute('data-name'));
+  });
+  const otherInput = document.getElementById('other-name');
+  otherInput.oninput = () => {
+    if (otherInput.value.trim().length > 1){
+      document.querySelectorAll('#name-grid .pill').forEach(p => p.classList.remove('selected'));
+    }
+  };
+  otherInput.onkeydown = (e) => {
+    if (e.key === 'Enter' && otherInput.value.trim()){
+      pickName(otherInput.value.trim());
+    }
+  };
+}
+
+async function pickName(name){
+  selectedName = name;
+  screen = 'action';
+  selectedSite = null;
+  otherSiteMode = false;
+  const entries = await fetchEntries();
+  const statuses = deriveStatuses(entries);
+  currentStatus = statuses.find(s => s.name === name) || null;
+  render();
+}
+
+function renderActionScreen(){
+  const isIn = !!currentStatus;
+  let body = '';
+  if (isIn){
+    body = `
+      <div class="status-banner on">
+        <div class="status-dot on"></div>
+        <div>Checked in at <strong>${escapeHtml(currentStatus.site)}</strong> &middot; ${fmtTime(currentStatus.checkinTime)} (${fmtDuration(currentStatus.checkinTime)} ago)</div>
+      </div>
+      <button class="big-btn out" id="checkout-btn">Check Out</button>
+    `;
+  } else {
+    body = `
+      <div class="status-banner off">
+        <div class="status-dot off"></div>
+        <div>Not currently checked in</div>
+      </div>
+      <div class="label" style="margin-top:14px;">Site</div>
+      <div class="grid" id="site-grid">
+        ${SITES.map(s => `<div class="pill" data-site="${escapeHtml(s)}">${escapeHtml(s)}</div>`).join('')}
+        <div class="pill" data-site="Other">Other</div>
+      </div>
+      <div class="site-other-wrap" id="other-site-wrap" style="display:none;">
+        <input type="text" id="other-site-input" placeholder="Site name">
+      </div>
+      <div class="label" style="margin-top:14px;">What are you working on?<span class="req">*</span></div>
+      <textarea id="note-input" placeholder="e.g. Adjusting Dome#01 dehumidifier intake"></textarea>
+      <button class="big-btn in" id="checkin-btn" disabled>Check In</button>
+    `;
+  }
+  return `
+    ${configWarningHtml()}
+    <a class="back-link" id="back-link">&larr; Not ${escapeHtml(selectedName)}?</a>
+    <div class="card">
+      <div class="label">Signed in as</div>
+      <div style="font-size:17px;font-weight:700;">${escapeHtml(selectedName)}</div>
+      ${body}
+    </div>
+    <div class="card" id="boards-card">
+      <div class="label">Currently on site</div>
+      <div id="on-site-board"></div>
+    </div>
+    <div class="card">
+      <div class="label">Today's activity</div>
+      <div id="activity-log"></div>
+    </div>
+  `;
+}
+
+function attachActionHandlers(){
+  document.getElementById('back-link').onclick = () => {
+    screen = 'name';
+    selectedName = null;
+    currentStatus = null;
+    render();
+  };
+
+  if (currentStatus){
+    document.getElementById('checkout-btn').onclick = doCheckOut;
+    return;
+  }
+
+  const siteGrid = document.getElementById('site-grid');
+  const otherWrap = document.getElementById('other-site-wrap');
+  const otherInput = document.getElementById('other-site-input');
+  const noteInput = document.getElementById('note-input');
+  const checkBtn = document.getElementById('checkin-btn');
+
+  function updateBtn(){
+    const site = selectedSite === 'Other' ? otherInput.value.trim() : selectedSite;
+    checkBtn.disabled = !(site && noteInput.value.trim().length > 0);
+  }
+
+  siteGrid.querySelectorAll('.pill').forEach(el => {
+    el.onclick = () => {
+      siteGrid.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedSite = el.getAttribute('data-site');
+      otherWrap.style.display = selectedSite === 'Other' ? 'block' : 'none';
+      updateBtn();
+    };
+  });
+  otherInput.oninput = updateBtn;
+  noteInput.oninput = updateBtn;
+
+  checkBtn.onclick = () => {
+    const site = selectedSite === 'Other' ? otherInput.value.trim() : selectedSite;
+    doCheckIn(selectedName, site, noteInput.value.trim());
+  };
+}
+
+async function doCheckIn(name, site, note){
+  if (!apiConfigured()){ showToast('API_URL not set yet — see banner above'); return; }
+  try{
+    await postEntry({ name, site, action: 'in', note });
+    showToast('Checked in at ' + site);
+    currentStatus = { site, checkinTime: new Date().toISOString(), note };
+    render();
+    fetchEntries();
+  }catch(e){
+    showToast('Could not save — try again');
+  }
+}
+
+async function doCheckOut(){
+  if (!currentStatus) return;
+  if (!apiConfigured()){ showToast('API_URL not set yet — see banner above'); return; }
+  const name = selectedName;
+  const site = currentStatus.site;
+  try{
+    await postEntry({ name, site, action: 'out', note: '' });
+    showToast('Checked out of ' + site);
+    currentStatus = null;
+    render();
+    fetchEntries();
+  }catch(e){
+    showToast('Could not save — try again');
+  }
+}
+
+function isToday(iso){
+  const d = new Date(iso), now = new Date();
+  return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate();
+}
+
+async function renderBoards(){
+  const boardEl = document.getElementById('on-site-board');
+  const logEl = document.getElementById('activity-log');
+  if (!boardEl || !logEl) return;
+
+  const entries = await fetchEntries();
+  const statuses = deriveStatuses(entries);
+
+  if (statuses.length === 0){
+    boardEl.innerHTML = '<div class="empty">No one currently checked in</div>';
+  } else {
+    boardEl.innerHTML = statuses.map(s => `
+      <div class="board-item">
+        <div>
+          <div class="board-name">${escapeHtml(s.name)}</div>
+          <div class="board-site">${escapeHtml(s.site)}${s.note ? ' — ' + escapeHtml(s.note) : ''}</div>
+        </div>
+        <div class="board-time">${fmtDuration(s.checkinTime)}</div>
+      </div>
+    `).join('');
+  }
+
+  const todays = entries.filter(e => isToday(e.timestamp)).slice(0, 30);
+  if (todays.length === 0){
+    logEl.innerHTML = '<div class="empty">No activity yet today</div>';
+  } else {
+    logEl.innerHTML = todays.map(e => `
+      <div class="log-entry">
+        <div class="log-top">
+          <span class="log-name">${escapeHtml(e.name)} <span class="log-action ${e.action}">${e.action === 'in' ? 'IN' : 'OUT'}</span></span>
+          <span class="log-meta">${fmtTime(e.timestamp)}</span>
+        </div>
+        <div class="log-meta">${escapeHtml(e.site)}</div>
+        ${e.note ? `<div class="log-note">"${escapeHtml(e.note)}"</div>` : ''}
+      </div>
+    `).join('');
+  }
+}
+
+render();
+setInterval(renderBoards, 20000);
+</script>
+</body>
+</html>
