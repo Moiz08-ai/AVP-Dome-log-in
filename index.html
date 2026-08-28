@@ -113,7 +113,7 @@
    ==================================================================== */
 const API_URL = "https://script.google.com/macros/s/AKfycbxNrvJoa_D8F-rZ33vESvP_rLgrgWgIyjSHTNMq-sbyG7k2cRyy842Pzu0B63a4pGjiiw/exec";
 
-const NAMES = ["David Soo","Vivek","Namal Jayasuriya","Craig Rushby","Moiz","Joshua Soo","Julie Sosso","Craig Davis"];
+const NAMES = ["David Soo","Vivek","Namal Jayasuriya","Craig Rushby","Moiz","Joshua Soo","Julie Sosso","Craig Davis","Kalvin Lam","Alex Meagher"];
 const SITES = ["Dome#01 Richmond","Factory Richmond","Dome#03 Richmond"];
 
 let screen = 'name';       // 'name' | 'action'
@@ -217,8 +217,12 @@ function renderNameScreen(){
     <div class="card">
       <div class="label">Who are you?</div>
       <div class="grid" id="name-grid"></div>
+    </div>
+    <div class="card">
+      <div class="label">Visitor or client?</div>
       <div class="site-other-wrap">
-        <input type="text" id="other-name" placeholder="Type your name if not listed">
+        <input type="text" id="other-name" placeholder="Enter their name">
+        <button class="big-btn in" id="other-name-btn" style="margin-top:10px;" disabled>Continue</button>
       </div>
     </div>
     <div class="card" id="boards-card">
@@ -239,13 +243,17 @@ function attachNameHandlers(){
     el.onclick = () => pickName(el.getAttribute('data-name'));
   });
   const otherInput = document.getElementById('other-name');
+  const otherBtn = document.getElementById('other-name-btn');
   otherInput.oninput = () => {
-    if (otherInput.value.trim().length > 1){
-      document.querySelectorAll('#name-grid .pill').forEach(p => p.classList.remove('selected'));
-    }
+    otherBtn.disabled = otherInput.value.trim().length === 0;
   };
   otherInput.onkeydown = (e) => {
     if (e.key === 'Enter' && otherInput.value.trim()){
+      pickName(otherInput.value.trim());
+    }
+  };
+  otherBtn.onclick = () => {
+    if (otherInput.value.trim()){
       pickName(otherInput.value.trim());
     }
   };
